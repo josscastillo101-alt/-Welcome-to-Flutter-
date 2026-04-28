@@ -1,0 +1,116 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MiApp());
+}
+
+class MiApp extends StatelessWidget {
+  const MiApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Mi aplicación en Flutter',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // AppBar con el nombre de la app
+      appBar: AppBar(
+        title: const Text('Mi aplicación en Flutter'),
+        centerTitle: true,
+        backgroundColor: Colors.black54,
+      ),
+      // Stack para poner imagen de fondo + contenido encima
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Imagen de fondo
+          Image.asset(
+            'assets/fondo.jpg', // Debe estar en assets/
+            fit: BoxFit.cover,
+          ),
+          
+          // Overlay oscuro para que se lea el texto
+          Container(
+            color: Colors.black.withOpacity(0.4),
+          ),
+          
+          // Mensaje de bienvenida centrado
+          const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.waving_hand,
+                  size: 80,
+                  color: Colors.white,
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Bienvenidos a mi primera aplicación',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        blurRadius: 10,
+                        color: Colors.black,
+                        offset: Offset(2, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/fondo.jpg
+
+
+
+
+
+
+
+
+
+Estructura de carpetas
+mi_primera_app/
+├── lib/
+│   └── main.dart
+├── assets/
+│   └── fondo.jpg  
+└── pubspec.yaml
+
+
+
+
+
+
+
+
+
+
+
