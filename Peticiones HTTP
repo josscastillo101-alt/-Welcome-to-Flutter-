@@ -1,0 +1,209 @@
+flutter pub add http
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/fondo.jpg
+
+<uses-permission android:name="android.permission.INTERNET"/>
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main() {
+  runApp(const MiApp());
+}
+
+class MiApp extends StatelessWidget {
+  const MiApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'PokeApp Flutter',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.red,
+        useMaterial3: true,
+      ),
+      home: const HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _controller = TextEditingController();
+  Map<String, dynamic>? _pokemon;
+  bool _cargando = false;
+  String? _error;
+
+  // Función que hace la petición HTTP a PokeAPI
+  Future<void> buscarPokemon(String nombre) async {
+    if (nombre.isEmpty) return;
+
+    setState(() {
+      _cargando = true;
+      _error = null;
+      _pokemon = null;
+    });
+
+    try {
+      // La API es: https://pokeapi.co/api/v2/pokemon/pikachu
+      final url = Uri.parse('https://pokeapi.co/api/v2/pokemon/${nombre.toLowerCase()}');
+      final respuesta = await http.get(url);
+
+      if (respuesta.statusCode == 200) {
+        setState(() {
+          _pokemon = json.decode(respuesta.body);
+          _cargando = false;
+        });
+      } else {
+        setState(() {
+          _error = 'Pokémon no encontrado';
+          _cargando = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error de conexión: $e';
+        _cargando = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('PokeAPI con Flutter'),
+        centerTitle: true,
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/fondo.jpg', fit: BoxFit.cover),
+          Container(color: Colors.black.withOpacity(0.6)),
+          
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                // Buscador
+                TextField(
+                  controller: _controller,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Escribe un Pokémon: pikachu, charizard...',
+                    hintStyle: const TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.2),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.search, color: Colors.white),
+                      onPressed: () => buscarPokemon(_controller.text),
+                    ),
+                  ),
+                  onSubmitted: buscarPokemon,
+                ),
+                const SizedBox(height: 30),
+
+                // Resultado
+                if (_cargando)
+                  const CircularProgressIndicator(color: Colors.white)
+                else if (_error != null)
+                  Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 18))
+                else if (_pokemon != null)
+                  Expanded(child: PokemonCard(pokemon: _pokemon!))
+                else
+                  const Text(
+                    'Busca tu Pokémon favorito',
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Widget para mostrar la tarjeta del Pokémon
+class PokemonCard extends StatelessWidget {
+  final Map<String, dynamic> pokemon;
+  const PokemonCard({super.key, required this.pokemon});
+
+  @override
+  Widget build(BuildContext context) {
+    // Sacamos los datos que nos da la API
+    final String nombre = pokemon['name'];
+    final int id = pokemon['id'];
+    final String imagen = pokemon['sprites']['other']['official-artwork']['front_default'] ?? 
+                          pokemon['sprites']['front_default'];
+    final List tipos = pokemon['types'].map((t) => t['type']['name']).toList();
+    final int altura = pokemon['height']; // en decímetros
+    final int peso = pokemon['weight']; // en hectogramos
+
+    return SingleChildScrollView(
+      child: Card(
+        color: Colors.white.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Text(
+                '#$id ${nombre.toUpperCase()}',
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Image.network(imagen, height: 200, fit: BoxFit.contain),
+              const SizedBox(height: 15),
+              Wrap(
+                spacing: 8,
+                children: tipos.map((tipo) => Chip(
+                  label: Text(tipo, style: const TextStyle(color: Colors.white)),
+                  backgroundColor: _colorPorTipo(tipo),
+                )).toList(),
+              ),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Column(children: [const Text('Altura'), Text('${altura / 10} m')]),
+                  Column(children: [const Text('Peso'), Text('${peso / 10} kg')]),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _colorPorTipo(String tipo) {
+    switch (tipo) {
+      case 'fire': return Colors.red;
+      case 'water': return Colors.blue;
+      case 'grass': return Colors.green;
+      case 'electric': return Colors.amber;
+      case 'psychic': return Colors.pink;
+      default: return Colors.grey;
+    }
+  }
+}
