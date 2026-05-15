@@ -1,0 +1,60 @@
+# Instala las herramientas si no las tienes
+dart pub global activate flutterfire_cli
+
+# En la carpeta de tu proyecto Flutter
+flutterfire configure
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.8.0
+  cloud_firestore: ^5.5.0 # Base de datos NoSQL tiempo real
+  firebase_auth: ^5.3 # Login con Google, email, etc
+  firebase_storage: ^12.3.6 # Guardar imágenes/archivos
+
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart'; // el que generó flutterfire
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(MyApp());
+}
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// Guardar un pokemon favorito
+Future<void> guardarPokemon(String nombre, String tipo) async {
+  await FirebaseFirestore.instance.collection('favoritos').add({
+    'nombre': nombre,
+    'tipo': tipo,
+    'fecha': Timestamp.now(),
+  });
+}
+
+// Leer en tiempo real
+Stream<QuerySnapshot> leerFavoritos() {
+  return FirebaseFirestore.instance
+     .collection('favoritos')
+     .orderBy('fecha', descending: true)
+     .snapshots();
+}
+
+// En tu Widget:
+StreamBuilder<QuerySnapshot>(
+  stream: leerFavoritos(),
+  builder: (context, snapshot) {
+    if (!snapshot.hasData) return CircularProgressIndicator();
+    final docs = snapshot.data!.docs;
+    return ListView.builder(
+      itemCount: docs.length,
+      itemBuilder: (context, index) {
+        final data = docs[index].data() as Map<String, dynamic>;
+        return ListTile(title: Text(data['nombre']));
+      },
+    );
+  },
+)
